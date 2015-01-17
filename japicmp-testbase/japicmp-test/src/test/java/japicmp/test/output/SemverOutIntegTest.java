@@ -13,23 +13,32 @@ import japicmp.model.AccessModifier;
 import japicmp.model.JApiClass;
 import japicmp.output.semver.SemverOut;
 import japicmp.test.util.Helper;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class SemverOutIntegTest {
 
 	@Test
-	public void testSemver001_implementation_of_method_changes() {
+	public void testSemver001_new_private_method_and_annotation() {
 		String lastPackage = "semver001.a";
 		String string = getSemverDiff(lastPackage);
 		assertEquals("0.0.1", string);
 	}
 
 	@Test
-	public void testSemver010_added_deprecated_annotation() {
-		String lastPackage = "semver010.a";
+	public void testSemver001_new_package_visible_type() {
+		String lastPackage = "semver001.b";
+
 		String string = getSemverDiff(lastPackage);
-		assertEquals("0.1.0", string);
+
+		assertEquals("0.0.1", string);
+	}
+
+	@Test
+	public void testSemver001_added_new_annotations() {
+		String lastPackage = "semver001.c";
+
+		String string = getSemverDiff(lastPackage);
+		assertEquals("0.0.1", string);
 	}
 
 	@Test

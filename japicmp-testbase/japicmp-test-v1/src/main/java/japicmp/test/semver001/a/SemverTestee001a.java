@@ -6,7 +6,7 @@ public class SemverTestee001a {
 
 	}
 
-	public int methodImplementationChanges(int a, int b) {
-		return a + b;
+	private void doIt() {
+
 	}
 }

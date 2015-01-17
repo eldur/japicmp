@@ -6,7 +6,12 @@ public class SemverTestee001a {
 
 	}
 
-	public int methodImplementationChanges(int a, int b) {
-		return a - b;
+	@Deprecated
+	private void doIt() {
+
+	}
+
+	private void doItReal() {
+
 	}
 }

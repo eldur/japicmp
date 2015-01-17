@@ -12,12 +12,13 @@ import japicmp.model.JApiChangeStatus;
 import japicmp.model.JApiClass;
 import japicmp.model.JApiConstructor;
 import japicmp.model.JApiField;
+import japicmp.model.JApiHasAccessModifier;
 import japicmp.model.JApiHasAnnotations;
 import japicmp.model.JApiHasChangeStatus;
 import japicmp.model.JApiImplementedInterface;
 import japicmp.model.JApiMethod;
+import japicmp.model.JApiModifier;
 import japicmp.model.JApiSuperclass;
-import japicmp.output.OutputFilter;
 import japicmp.output.OutputGenerator;
 
 public class SemverOut extends OutputGenerator {
@@ -32,6 +33,9 @@ public class SemverOut extends OutputGenerator {
 	}
 
 	public String value() {
+		options.setOutputOnlyModifications(true);
+		options.setAccessModifier(AccessModifier.PROTECTED);
+
 		return generate(jApiClasses);
 	}
 
@@ -41,32 +45,34 @@ public class SemverOut extends OutputGenerator {
 			builder.addAll(processClass(jApiClass));
 			builder.addAll(processConstructors(jApiClass));
 			builder.addAll(processMethods(jApiClass));
-			builder.addAll(processAnnotations(jApiClass));
+			builder.addAll(processAnnotations(jApiClass, jApiClass));
 		}
 		ImmutableSet<SemverStatus> build = builder.build();
-		if (build.contains(SemverStatus.CHANGED_BINARY_INCOMPATIBLE)) {
+		if (build.contains(SemverStatus.MAJOR)) {
 			return "1.0.0";
-		} else if (build.contains(SemverStatus.CHANGED_BINARY_COMPATIBLE)) {
+		} else if (build.contains(SemverStatus.MINOR)) {
 			return "0.1.0";
-		} else if (build.isEmpty() || build.contains(SemverStatus.UNCHANGED)) {
+		} else if (build.isEmpty() || build.contains(SemverStatus.PATCH)) {
 			return "0.0.1";
 		} else {
 			return "N/A";
 		}
 	}
 
-	private ImmutableSet<SemverStatus> processAnnotations(JApiHasAnnotations jApiClass) {
+	private ImmutableSet<SemverStatus> processAnnotations(JApiHasAnnotations jApiClass,
+			JApiHasAccessModifier accessModifier) {
 		List<JApiAnnotation> annotations = jApiClass.getAnnotations();
 		ImmutableSet.Builder<SemverStatus> builder = ImmutableSet.builder();
 		for (JApiAnnotation jApiAnnotation : annotations) {
-			builder.add(signs(jApiAnnotation));
+			builder.add(detectChangeStatus(jApiAnnotation, accessModifier));
 			List<JApiAnnotationElement> elements = jApiAnnotation.getElements();
 			for (JApiAnnotationElement jApiAnnotationElement : elements) {
-				builder.add(signs(jApiAnnotationElement));
+				builder.add(detectChangeStatus(jApiAnnotationElement, accessModifier));
 			}
-			if ("java.lang.Deprecated".equals(jApiAnnotation.getFullyQualifiedName())) {
+			// following false only for documentation
+			if (false && "java.lang.Deprecated".equals(jApiAnnotation.getFullyQualifiedName())) {
 				if (jApiAnnotation.getChangeStatus().equals(JApiChangeStatus.NEW)) {
-					builder.add(SemverStatus.CHANGED_BINARY_COMPATIBLE);
+					builder.add(SemverStatus.MINOR);
 				}
 			}
 		}
@@ -77,8 +83,8 @@ public class SemverOut extends OutputGenerator {
 		List<JApiConstructor> constructors = jApiClass.getConstructors();
 		ImmutableSet.Builder<SemverStatus> builder = ImmutableSet.builder();
 		for (JApiConstructor jApiConstructor : constructors) {
-			builder.add(signs(jApiConstructor));
-			builder.addAll(processAnnotations(jApiConstructor));
+			builder.add(detectChangeStatus(jApiConstructor, jApiConstructor));
+			builder.addAll(processAnnotations(jApiConstructor, jApiConstructor));
 		}
 		return builder.build();
 	}
@@ -87,8 +93,8 @@ public class SemverOut extends OutputGenerator {
 		ImmutableSet.Builder<SemverStatus> builder = ImmutableSet.builder();
 		List<JApiMethod> methods = jApiClass.getMethods();
 		for (JApiMethod jApiMethod : methods) {
-			builder.add(signs(jApiMethod));
-			builder.addAll(processAnnotations(jApiMethod));
+			builder.add(detectChangeStatus(jApiMethod, jApiMethod));
+			builder.addAll(processAnnotations(jApiMethod, jApiMethod));
 		}
 		return builder.build();
 	}
@@ -101,24 +107,32 @@ public class SemverOut extends OutputGenerator {
 		return builder.build();
 	}
 
-	static SemverStatus signs(JApiHasChangeStatus hasChangeStatus) {
+	static SemverStatus detectChangeStatus(JApiHasChangeStatus hasChangeStatus,
+			JApiHasAccessModifier accessModifier) {
 		JApiChangeStatus changeStatus = hasChangeStatus.getChangeStatus();
 		switch (changeStatus) {
-			case UNCHANGED:
-				return SemverStatus.UNCHANGED;
-			case NEW:
-			case REMOVED:
-			case MODIFIED:
-				if (hasChangeStatus instanceof JApiBinaryCompatibility) {
-					JApiBinaryCompatibility binaryCompatibility = (JApiBinaryCompatibility) hasChangeStatus;
-					if (binaryCompatibility.isBinaryCompatible()) {
-						return SemverStatus.CHANGED_BINARY_COMPATIBLE;
+		case UNCHANGED:
+			return SemverStatus.PATCH;
+		case NEW:
+		case REMOVED:
+		case MODIFIED:
+			if (hasChangeStatus instanceof JApiBinaryCompatibility) {
+				JApiBinaryCompatibility binaryCompatibility = (JApiBinaryCompatibility) hasChangeStatus;
+				if (binaryCompatibility.isBinaryCompatible()) {
+					if (accessModifier != null) {
+						return changeStatusFromAccessModifier(accessModifier);
 					} else {
-						return SemverStatus.CHANGED_BINARY_INCOMPATIBLE;
+						throw new IllegalStateException("access modifier must not be null");
 					}
+				} else {
+					return SemverStatus.MAJOR;
 				}
-			default:
-				throw new IllegalStateException();
+			} else {
+				throw new IllegalStateException(
+						"change status must implement " + JApiBinaryCompatibility.class.getCanonicalName());
+			}
+		default:
+			throw new IllegalStateException("only " + JApiChangeStatus.knownValues() + " are allowed");
 		}
 	}
 
@@ -126,27 +140,88 @@ public class SemverOut extends OutputGenerator {
 		List<JApiField> fields = jApiClass.getFields();
 		ImmutableSet.Builder<SemverStatus> builder = ImmutableSet.builder();
 		for (JApiField field : fields) {
-			builder.add(signs(field));
-			builder.addAll(processAnnotations(field));
+			builder.add(detectChangeStatus(field, field));
+			builder.addAll(processAnnotations(field, field));
 		}
 		return builder.build();
 	}
 
+	static SemverStatus changeStatusFromAccessModifier(JApiHasAccessModifier modifier) {
+
+		JApiModifier<AccessModifier> accessModifier = modifier.getAccessModifier();
+		if (isOldAndNewPresent(accessModifier)) {
+			if (isOldPublic(accessModifier)) {
+				if (isNewPublic(accessModifier)) {
+					return SemverStatus.PATCH;
+				} else {
+					return SemverStatus.MAJOR;
+				}
+			} else if (isNewPublic(accessModifier)) {
+				return SemverStatus.MINOR;
+			} else {
+				return SemverStatus.PATCH;
+			}
+		} else if (ifOnlyOldIsPresent(accessModifier)) {
+			if (isOldPublic(accessModifier)) {
+				return SemverStatus.MAJOR;
+			} else {
+				return SemverStatus.PATCH;
+			}
+		} else if (isOnlyNewPresent(accessModifier)) {
+			if (isNewPublic(accessModifier)) {
+				return SemverStatus.MINOR;
+			} else {
+				return SemverStatus.PATCH;
+			}
+		} else {
+			throw new IllegalStateException();
+		}
+	}
+
+	private static boolean isOldPublic(JApiModifier<AccessModifier> accessModifier) {
+		return accessModifier.getOldModifier().get().equals(AccessModifier.PUBLIC);
+	}
+
+	private static boolean isNewPublic(JApiModifier<AccessModifier> accessModifier) {
+		return accessModifier.getNewModifier().get().equals(AccessModifier.PUBLIC);
+	}
+
+	private static boolean isOnlyNewPresent(JApiModifier<AccessModifier> accessModifier) {
+		return !isNewPresent(accessModifier) && isOldPresent(accessModifier);
+	}
+
+	private static boolean isOldPresent(JApiModifier<AccessModifier> accessModifier) {
+		return accessModifier.getNewModifier().isPresent();
+	}
+
+	private static boolean isNewPresent(JApiModifier<AccessModifier> accessModifier) {
+		return accessModifier.getOldModifier().isPresent();
+	}
+
+	private static boolean ifOnlyOldIsPresent(JApiModifier<AccessModifier> accessModifier) {
+		return isNewPresent(accessModifier) && !isOldPresent(accessModifier);
+	}
+
+	private static boolean isOldAndNewPresent(JApiModifier<AccessModifier> accessModifier) {
+		return isNewPresent(accessModifier) && isOldPresent(accessModifier);
+	}
+
 	private SemverStatus processSuperclassChanges(JApiClass jApiClass) {
 		JApiSuperclass jApiSuperclass = jApiClass.getSuperclass();
-		return signs(jApiSuperclass);
+		return detectChangeStatus(jApiSuperclass, jApiClass);
 	}
 
 	private ImmutableSet<SemverStatus> processInterfaceChanges(JApiClass jApiClass) {
 		List<JApiImplementedInterface> interfaces = jApiClass.getInterfaces();
 		ImmutableSet.Builder<SemverStatus> builder = ImmutableSet.builder();
 		for (JApiImplementedInterface implementedInterface : interfaces) {
-			builder.add(signs(implementedInterface));
+			builder.add(detectChangeStatus(implementedInterface, jApiClass));
 		}
 		return builder.build();
 	}
 
 	static enum SemverStatus {
-		UNCHANGED, CHANGED_BINARY_COMPATIBLE, CHANGED_BINARY_INCOMPATIBLE;
+		PATCH, MINOR, MAJOR;
 	}
+
 }
