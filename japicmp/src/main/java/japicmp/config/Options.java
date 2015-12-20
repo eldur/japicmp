@@ -38,6 +38,14 @@ public class Options {
 	private JApiCli.ClassPathMode classPathMode = JApiCli.ClassPathMode.ONE_COMMON_CLASSPATH;
 	private boolean noAnnotations = false;
 
+	Options() {
+		// intentionally left empty
+	}
+
+	public static Options newDefault() {
+		return new Options();
+	}
+
 	public List<File> getNewArchives() {
 		return newArchives;
 	}
@@ -74,12 +82,12 @@ public class Options {
 		this.accessModifier = accessModifier;
 	}
 
-	public void setAccessModifier(AccessModifier accessModifier) {
-		this.accessModifier = Optional.of(accessModifier);
-	}
-
 	public AccessModifier getAccessModifier() {
 		return accessModifier.get();
+	}
+
+	public void setAccessModifier(AccessModifier accessModifier) {
+		this.accessModifier = Optional.of(accessModifier);
 	}
 
 	public List<Filter> getIncludes() {
@@ -128,12 +136,12 @@ public class Options {
 		return filters;
 	}
 
-	public void setOutputOnlyBinaryIncompatibleModifications(boolean outputOnlyBinaryIncompatibleModifications) {
-		this.outputOnlyBinaryIncompatibleModifications = outputOnlyBinaryIncompatibleModifications;
-	}
-
 	public boolean isOutputOnlyBinaryIncompatibleModifications() {
 		return outputOnlyBinaryIncompatibleModifications;
+	}
+
+	public void setOutputOnlyBinaryIncompatibleModifications(boolean outputOnlyBinaryIncompatibleModifications) {
+		this.outputOnlyBinaryIncompatibleModifications = outputOnlyBinaryIncompatibleModifications;
 	}
 
 	public Optional<String> getHtmlOutputFile() {
@@ -144,12 +152,12 @@ public class Options {
 		this.htmlOutputFile = htmlOutputFile;
 	}
 
-	public void setIncludeSynthetic(boolean showSynthetic) {
-		this.includeSynthetic = showSynthetic;
-	}
-
 	public boolean isIncludeSynthetic() {
 		return includeSynthetic;
+	}
+
+	public void setIncludeSynthetic(boolean showSynthetic) {
+		this.includeSynthetic = showSynthetic;
 	}
 
 	public void addClassesExcludeFromArgument(Optional<String> stringOptional) {
@@ -168,51 +176,51 @@ public class Options {
 		return classesExclude;
 	}
 
-	public void setIgnoreMissingClasses(boolean ignoreMissingClasses) {
-		this.ignoreMissingClasses = ignoreMissingClasses;
-	}
-
 	public boolean isIgnoreMissingClasses() {
 		return ignoreMissingClasses;
 	}
 
-	public void setHtmlStylesheet(Optional<String> htmlStylesheet) {
-		this.htmlStylesheet = htmlStylesheet;
+	public void setIgnoreMissingClasses(boolean ignoreMissingClasses) {
+		this.ignoreMissingClasses = ignoreMissingClasses;
 	}
 
 	public Optional<String> getHtmlStylesheet() {
 		return htmlStylesheet;
 	}
 
-	public void setOldClassPath(Optional<String> oldClassPath) {
-		this.oldClassPath = oldClassPath;
+	public void setHtmlStylesheet(Optional<String> htmlStylesheet) {
+		this.htmlStylesheet = htmlStylesheet;
 	}
 
 	public Optional<String> getOldClassPath() {
 		return oldClassPath;
 	}
 
-	public void setNewClassPath(Optional<String> newClassPath) {
-		this.newClassPath = newClassPath;
+	public void setOldClassPath(Optional<String> oldClassPath) {
+		this.oldClassPath = oldClassPath;
 	}
 
 	public Optional<String> getNewClassPath() {
 		return newClassPath;
 	}
 
-	public void setClassPathMode(JApiCli.ClassPathMode classPathMode) {
-		this.classPathMode = classPathMode;
+	public void setNewClassPath(Optional<String> newClassPath) {
+		this.newClassPath = newClassPath;
 	}
 
 	public JApiCli.ClassPathMode getClassPathMode() {
 		return classPathMode;
 	}
 
-	public void setNoAnnotations(boolean noAnnotations) {
-		this.noAnnotations = noAnnotations;
+	public void setClassPathMode(JApiCli.ClassPathMode classPathMode) {
+		this.classPathMode = classPathMode;
 	}
 
 	public boolean isNoAnnotations() {
 		return noAnnotations;
+	}
+
+	public void setNoAnnotations(boolean noAnnotations) {
+		this.noAnnotations = noAnnotations;
 	}
 }
