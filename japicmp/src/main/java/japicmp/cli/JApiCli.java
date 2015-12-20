@@ -18,15 +18,13 @@ import japicmp.output.xml.XmlOutputGenerator;
 import japicmp.output.xml.XmlOutputGeneratorOptions;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.jar.JarFile;
 
 public class JApiCli {
 	public static final String IGNORE_MISSING_CLASSES = "--ignore-missing-classes";
-	static final String OLD_CLASSPATH = "--old-classpath";
-	static final String NEW_CLASSPATH = "--new-classpath";
+	public static final String OLD_CLASSPATH = "--old-classpath";
+	public static final String NEW_CLASSPATH = "--new-classpath";
 
 	public enum ClassPathMode {
 		ONE_COMMON_CLASSPATH, TWO_SEPARATE_CLASSPATHS
@@ -73,8 +71,8 @@ public class JApiCli {
 
 		@Override
 		public void run() {
-			Options options = createOptions();
-			verifyOptions(options);
+			Options options = createOptionsFromCliArgs();
+			Options.verify(options);
 			JarArchiveComparator jarArchiveComparator = new JarArchiveComparator(JarArchiveComparatorOptions.of(options));
 			List<JApiClass> jApiClasses = jarArchiveComparator.compare(options.getOldArchives(), options.getNewArchives());
 			generateOutput(options, jApiClasses);
@@ -104,7 +102,7 @@ public class JApiCli {
 			System.out.println(output);
 		}
 
-		private Options createOptions() {
+		private Options createOptionsFromCliArgs() {
 			Options options = Options.newDefault();
 			options.getOldArchives().addAll(createFileList(checkNonNull(pathToOldVersionJar, "Required option -o is missing.")));
 			options.getNewArchives().addAll(createFileList(checkNonNull(pathToNewVersionJar, "Required option -n is missing.")));
@@ -132,65 +130,6 @@ public class JApiCli {
 				files.add(file);
 			}
 			return files;
-		}
-
-		private void verifyOptions(Options options) {
-			for (File file : options.getOldArchives()) {
-				verifyExistsCanReadAndJar(file);
-			}
-			for (File file : options.getNewArchives()) {
-				verifyExistsCanReadAndJar(file);
-			}
-			if (options.getHtmlStylesheet().isPresent()) {
-				String pathname = options.getHtmlStylesheet().get();
-				File stylesheetFile = new File(pathname);
-				if (!stylesheetFile.exists()) {
-					throw JApiCmpException.of(JApiCmpException.Reason.CliError, "HTML stylesheet '%s' does not exist.", pathname);
-				}
-			}
-			if (options.getOldClassPath().isPresent() && options.getNewClassPath().isPresent()) {
-				options.setClassPathMode(ClassPathMode.TWO_SEPARATE_CLASSPATHS);
-			} else {
-				if (options.getOldClassPath().isPresent() || options.getNewClassPath().isPresent()) {
-					throw JApiCmpException.of(JApiCmpException.Reason.CliError, "Please provide both options: " + OLD_CLASSPATH + " and " + NEW_CLASSPATH);
-				} else {
-					options.setClassPathMode(ClassPathMode.ONE_COMMON_CLASSPATH);
-				}
-			}
-		}
-
-		private void verifyExistsCanReadAndJar(File file) {
-			verifyExisting(file);
-			verifyCanRead(file);
-			verifyJarArchive(file);
-		}
-
-		private void verifyExisting(File newArchive) {
-			if (!newArchive.exists()) {
-				throw JApiCmpException.of(JApiCmpException.Reason.CliError, "File '%s' does not exist.", newArchive.getAbsolutePath());
-			}
-		}
-
-		private void verifyCanRead(File file) {
-			if (!file.canRead()) {
-				throw JApiCmpException.of(JApiCmpException.Reason.CliError, "Cannot read file '%s'.", file.getAbsolutePath());
-			}
-		}
-
-		private void verifyJarArchive(File file) {
-			JarFile jarFile = null;
-			try {
-				jarFile = new JarFile(file);
-			} catch (IOException e) {
-				throw JApiCmpException.of(JApiCmpException.Reason.CliError, "File '%s' could not be opened as a jar file: %s", file.getAbsolutePath(), e.getMessage());
-			} finally {
-				if (jarFile != null) {
-					try {
-						jarFile.close();
-					} catch (IOException e) {
-					}
-				}
-			}
 		}
 
 		private <T> T checkNonNull(T in, String errorMessage) {
