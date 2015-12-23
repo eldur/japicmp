@@ -32,7 +32,7 @@ public class JApiCmpTest {
 				assertThatUseHelpOptionIsPrinted();
 			}
 		});
-		JApiCmp.main(new String[] {});
+		JApiCmp.mainVar();
 	}
 
 	private void assertThatUseHelpOptionIsPrinted() {
@@ -53,7 +53,7 @@ public class JApiCmpTest {
 				assertThatHelpIsPrinted();
 			}
 		});
-		JApiCmp.main(new String[] { "-h" });
+		JApiCmp.mainVar("-h");
 	}
 
 	@Test
@@ -64,7 +64,7 @@ public class JApiCmpTest {
 				assertThatHelpIsPrinted();
 			}
 		});
-		JApiCmp.main(new String[] { "--help" });
+		JApiCmp.mainVar("--help");
 	}
 
 	@Test
@@ -76,7 +76,7 @@ public class JApiCmpTest {
 				assertThatUseHelpOptionIsPrinted();
 			}
 		});
-		JApiCmp.main(new String[] { "-n" });
+		JApiCmp.mainVar("-n");
 	}
 
 	@Test
@@ -88,7 +88,7 @@ public class JApiCmpTest {
 				assertThatUseHelpOptionIsPrinted();
 			}
 		});
-		JApiCmp.main(new String[] { "-o" });
+		JApiCmp.mainVar("-o");
 	}
 
 	@Test
@@ -102,7 +102,7 @@ public class JApiCmpTest {
 				assertThatUseHelpOptionIsPrinted();
 			}
 		});
-		JApiCmp.main(new String[] { "-n", "xyz.jar", "-o", "zyx.jar" });
+		JApiCmp.mainVar("-n", "xyz.jar", "-o", "zyx.jar");
 	}
 
 	@Test
@@ -116,7 +116,7 @@ public class JApiCmpTest {
 				assertThatUseHelpOptionIsPrinted();
 			}
 		});
-		JApiCmp.main(new String[] { "-n", pathTo("new.jar"), "-o", "xyz.jar" });
+		JApiCmp.mainVar("-n", pathTo("new.jar"), "-o", "xyz.jar");
 	}
 
 	@Test
@@ -126,7 +126,7 @@ public class JApiCmpTest {
 				assertThat(errLog.getLog().trim(), not(containsString("E: ".trim())));
 			}
 		});
-		JApiCmp.main(new String[] { "-n", pathTo("new.jar"), "-o", pathTo("old.jar") });
+		JApiCmp.mainVar("-n", pathTo("new.jar"), "-o", pathTo("old.jar"));
 	}
 
 	private String pathTo(String jarFileName) {

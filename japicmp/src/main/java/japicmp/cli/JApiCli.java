@@ -1,6 +1,7 @@
 package japicmp.cli;
 
 import javax.inject.Inject;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
 import io.airlift.airline.Command;
 import io.airlift.airline.HelpOption;
@@ -13,9 +14,6 @@ import japicmp.model.AccessModifier;
 import japicmp.model.JApiClass;
 import japicmp.output.semver.SemverOut;
 import japicmp.output.stdout.StdoutOutputGenerator;
-import japicmp.output.xml.XmlOutput;
-import japicmp.output.xml.XmlOutputGenerator;
-import japicmp.output.xml.XmlOutputGeneratorOptions;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -55,7 +53,7 @@ public class JApiCli {
 		@Option(name = { "--html-file" }, description = "Provides the path to the html output file.")
 		public String pathToHtmlOutputFile;
 		@Option(name = { "-s", "--semantic-versioning" }, description = "Tells you which part of the version to increment.")
-		public boolean semanticVersioning = false;
+		public boolean semanticVersioningOnly = false;
 		@Option(name = { "--include-synthetic" }, description = "Include synthetic classes and class members that are hidden per default.")
 		public boolean includeSynthetic = false;
 		@Option(name = { IGNORE_MISSING_CLASSES }, description = "Ignores superclasses/interfaces missing on the classpath.")
@@ -75,31 +73,26 @@ public class JApiCli {
 			Options.verify(options);
 			JarArchiveComparator jarArchiveComparator = new JarArchiveComparator(JarArchiveComparatorOptions.of(options));
 			List<JApiClass> jApiClasses = jarArchiveComparator.compare(options.getOldArchives(), options.getNewArchives());
-			generateOutput(options, jApiClasses);
+			generateOutput(options, jApiClasses, new FileSystemOutputGenerator(options, jApiClasses));
 		}
 
-		private void generateOutput(Options options, List<JApiClass> jApiClasses) {
-			if (semanticVersioning) {
+		@VisibleForTesting
+		void generateOutput(Options options, List<JApiClass> jApiClasses, FileSystemOutputGenerator fileSystemOutputGenerator) {
+			if (semanticVersioningOnly) {
 				SemverOut semverOut = new SemverOut(options, jApiClasses);
-				String output = semverOut.generate();
-				System.out.println(output);
-				return;
-			}
-			if (options.getXmlOutputFile().isPresent() || options.getHtmlOutputFile().isPresent()) {
-				SemverOut semverOut = new SemverOut(options, jApiClasses);
-				XmlOutputGeneratorOptions xmlOutputGeneratorOptions = new XmlOutputGeneratorOptions();
-				xmlOutputGeneratorOptions.setCreateSchemaFile(true);
-				xmlOutputGeneratorOptions.setSemanticVersioningInformation(semverOut.generate());
-				XmlOutputGenerator xmlGenerator = new XmlOutputGenerator(jApiClasses, options, xmlOutputGeneratorOptions);
-				try (XmlOutput xmlOutput = xmlGenerator.generate()) {
-					XmlOutputGenerator.writeToFiles(options, xmlOutput);
-				} catch (Exception e) {
-					throw new JApiCmpException(JApiCmpException.Reason.IoException, "Could not close output streams: " + e.getMessage(), e);
+				String semverIncrement = semverOut.generate();
+				System.out.println(semverIncrement);
+			} else {
+				Optional<String> xmlOutputFile = options.getXmlOutputFile();
+				Optional<String> htmlOutputFile = options.getHtmlOutputFile();
+				if (xmlOutputFile.isPresent() || htmlOutputFile.isPresent()) {
+					fileSystemOutputGenerator.generate();
 				}
+				StdoutOutputGenerator stdoutOutputGenerator = new StdoutOutputGenerator(options, jApiClasses);
+				String output = stdoutOutputGenerator.generate();
+				System.out.println(output);
 			}
-			StdoutOutputGenerator stdoutOutputGenerator = new StdoutOutputGenerator(options, jApiClasses);
-			String output = stdoutOutputGenerator.generate();
-			System.out.println(output);
+
 		}
 
 		private Options createOptionsFromCliArgs() {

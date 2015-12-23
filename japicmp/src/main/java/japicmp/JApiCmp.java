@@ -8,6 +8,10 @@ import japicmp.exception.JApiCmpException;
 public class JApiCmp {
 	static final String USE_HELP_OR_H_FOR_MORE_INFORMATION = "See '--help' or '-h' for more information.";
 
+	public static void mainVar(String... args) {
+		main(args);
+	}
+
 	public static void main(String[] args) {
 		SingleCommand<JApiCli.Compare> singleCommand = SingleCommand.singleCommand(JApiCli.Compare.class);
 		try {

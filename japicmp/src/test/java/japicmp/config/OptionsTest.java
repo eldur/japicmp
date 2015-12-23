@@ -36,4 +36,20 @@ public class OptionsTest {
 			assertEquals("HTML stylesheet 'none.css' does not exist.", e.getMessage());
 		}
 	}
+
+	@Test
+	public void testVerify_htmlOut() {
+		// GIVEN
+		Options options = Options.newDefault();
+		options.setHtmlOutputFile(Optional.of("new.html"));
+
+		try {
+			// WHEN
+			Options.verify(options);
+			fail();
+		} catch (JApiCmpException e) {
+			// THEN
+			assertEquals("HTML stylesheet 'none.css' does not exist.", e.getMessage());
+		}
+	}
 }

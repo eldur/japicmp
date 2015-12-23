@@ -48,7 +48,9 @@ public class MethodFilterTest {
 
 	@Test
 	public void testMethodIsIncludedWithApp() {
-		JApiCmp.main(new String[] { "--include", MethodFilter.class.getName() + "#methodToInclude();" + Methods.class.getName() + "#finalToNonFinalMethod()", "-o", getArchive("japicmp-test-v1.jar").getAbsolutePath(), "-n", getArchive("japicmp-test-v2.jar").getAbsolutePath() });
+		JApiCmp.mainVar("--include", MethodFilter.class.getName() + "#methodToInclude();" + Methods.class.getName() + "#finalToNonFinalMethod()",
+			"-o", getArchive("japicmp-test-v1.jar").getAbsolutePath(),
+			"-n", getArchive("japicmp-test-v2.jar").getAbsolutePath());
 		String log = this.log.getLog();
 		assertThat(log, containsString(MethodFilter.class.getName()));
 		assertThat(log, containsString("methodToInclude"));

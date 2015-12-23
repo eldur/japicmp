@@ -63,35 +63,33 @@ public class XmlOutputGenerator extends OutputGenerator<XmlOutput> {
 		this.xmlOutputGeneratorOptions = xmlOutputGeneratorOptions;
 	}
 
-	@Override
-	public XmlOutput generate() {
-		JApiCmpXmlRoot jApiCmpXmlRoot = createRootElement(jApiClasses, options);
-		//analyzeJpaAnnotations(jApiCmpXmlRoot, jApiClasses);
-		filterClasses(jApiClasses, options);
-		return createXmlDocumentAndSchema(options, jApiCmpXmlRoot);
+	public static List<File> writeToFiles(Options options, XmlOutput xmlOutput) {
+		return writeToFiles(xmlOutput, options.getXmlOutputFile(), options.getHtmlOutputFile());
 	}
 
-	public static List<File> writeToFiles(Options options, XmlOutput xmlOutput) {
+	public static List<File> writeToFiles(XmlOutput xmlOutput, Optional<String> xmlOutputFile, Optional<String> htmlOutputFile) {
 		List<File> filesWritten = new ArrayList<>();
 		try {
-			if (xmlOutput.getXmlOutputStream().isPresent() && options.getXmlOutputFile().isPresent()) {
-				File xmlFile = new File(options.getXmlOutputFile().get());
+			if (xmlOutput.getXmlOutputStream().isPresent() && xmlOutputFile.isPresent()) {
+				File xmlFile = new File(xmlOutputFile.get());
 				try (FileOutputStream fos = new FileOutputStream(xmlFile)) {
 					ByteArrayOutputStream outputStream = xmlOutput.getXmlOutputStream().get();
 					outputStream.writeTo(fos);
 					filesWritten.add(xmlFile);
 				} catch (IOException e) {
-					throw new JApiCmpException(JApiCmpException.Reason.IoException, "Failed to write XML file '" + xmlFile.getAbsolutePath() + "': " + e.getMessage(), e);
+					throw new JApiCmpException(JApiCmpException.Reason.IoException, "Failed to write XML file '" +
+						xmlFile.getAbsolutePath() + "': " + e.getMessage(), e);
 				}
 			}
-			if (xmlOutput.getHtmlOutputStream().isPresent() && options.getHtmlOutputFile().isPresent()) {
-				File htmlFile = new File(options.getHtmlOutputFile().get());
+			if (xmlOutput.getHtmlOutputStream().isPresent() && htmlOutputFile.isPresent()) {
+				File htmlFile = new File(htmlOutputFile.get());
 				try (FileOutputStream fos = new FileOutputStream(htmlFile)) {
 					ByteArrayOutputStream outputStream = xmlOutput.getHtmlOutputStream().get();
 					outputStream.writeTo(fos);
 					filesWritten.add(htmlFile);
 				} catch (IOException e) {
-					throw new JApiCmpException(JApiCmpException.Reason.IoException, "Failed to write HTML file '" + htmlFile.getAbsolutePath() + "': " + e.getMessage(), e);
+					throw new JApiCmpException(JApiCmpException.Reason.IoException, "Failed to write HTML file '" +
+						htmlFile.getAbsolutePath() + "': " + e.getMessage(), e);
 				}
 			}
 		} finally {
@@ -101,6 +99,14 @@ public class XmlOutputGenerator extends OutputGenerator<XmlOutput> {
 			}
 		}
 		return filesWritten;
+	}
+
+	@Override
+	public XmlOutput generate() {
+		JApiCmpXmlRoot jApiCmpXmlRoot = createRootElement(jApiClasses, options);
+		//analyzeJpaAnnotations(jApiCmpXmlRoot, jApiClasses);
+		filterClasses(jApiClasses, options);
+		return createXmlDocumentAndSchema(options, jApiCmpXmlRoot);
 	}
 
 	private void analyzeJpaAnnotations(JApiCmpXmlRoot jApiCmpXmlRoot, List<JApiClass> jApiClasses) {
