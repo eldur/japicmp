@@ -10,7 +10,9 @@ import org.junit.Test;
 
 import java.util.List;
 
-import static japicmp.test.util.Helper.*;
+import static japicmp.test.util.Helper.getArchive;
+import static japicmp.test.util.Helper.getJApiClass;
+import static japicmp.test.util.Helper.getJApiMethod;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -42,7 +44,7 @@ public class LineNumberTest {
 		assertThat(jApiMethod.getOldLineNumber().isPresent(), is(true));
 		assertThat(jApiMethod.getOldLineNumber().get(), is(11));
 		assertThat(jApiMethod.geNewLineNumber().isPresent(), is(true));
-		assertThat(jApiMethod.geNewLineNumber().get(), is(12));
+		assertThat(jApiMethod.geNewLineNumber().get(), is(11));
 	}
 
 	@Test
@@ -60,6 +62,6 @@ public class LineNumberTest {
 		JApiMethod jApiMethod = getJApiMethod(jApiClass.getMethods(), "methodAdded");
 		assertThat(jApiMethod.getOldLineNumber().isPresent(), is(false));
 		assertThat(jApiMethod.geNewLineNumber().isPresent(), is(true));
-		assertThat(jApiMethod.geNewLineNumber().get(), is(16));
+		assertThat(jApiMethod.geNewLineNumber().get(), is(15));
 	}
 }
